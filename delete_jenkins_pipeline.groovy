@@ -38,7 +38,7 @@ pipeline {
                     withCredentials([usernamePassword(credentialsId: 'jenkins_id', usernameVariable: 'JENKINS_USER', passwordVariable: 'JENKINS_API_TOKEN')]) {
                         sh '''
                         . venv/bin/activate
-                        python3 ${SCRIPT_PATH} "${JENKINS_URL}" "${JENKINS_USER}" "${JENKINS_API_TOKEN}" "${params.FOLDER_NAME}"
+                        python3 ${SCRIPT_PATH} "${JENKINS_URL}" "${JENKINS_USER}" "${JENKINS_API_TOKEN}" "${FOLDER_NAME}"
                         '''
                     }
                 }
