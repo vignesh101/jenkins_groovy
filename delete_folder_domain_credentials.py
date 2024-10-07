@@ -6,19 +6,22 @@ from requests.auth import HTTPBasicAuth
 JENKINS_URL = ""
 JENKINS_USER = ""
 JENKINS_API_TOKEN = ""
+FOLDER = ""
 
 
 def parse_arguments():
-    global JENKINS_URL, JENKINS_USER, JENKINS_API_TOKEN
+    global JENKINS_URL, JENKINS_USER, JENKINS_API_TOKEN, FOLDER
     parser = argparse.ArgumentParser(description='Process Jenkins credentials.')
     parser.add_argument('jenkins_url', help='Jenkins URL')
     parser.add_argument('username', help='Jenkins username')
     parser.add_argument('password', help='Jenkins password or API token')
+    parser.add_argument('folder', help='Folder name')
     args = parser.parse_args()
 
     JENKINS_URL = args.jenkins_url
     JENKINS_USER = args.username
     JENKINS_API_TOKEN = args.password
+    FOLDER = args.folder
 
 
 def execute_groovy_script(script):
@@ -40,7 +43,7 @@ def execute_groovy_script(script):
         return f"Error: {response.status_code} - {response.text}"
 
 
-def main(folder_name):
+def main():
     groovy_script = '''
         import jenkins.model.Jenkins
         import com.cloudbees.hudson.plugins.folder.Folder
@@ -91,6 +94,12 @@ def main(folder_name):
         // Save changes
         Jenkins.instance.save()
     '''
-    groovy_script = groovy_script.replace('__FOLDER_NAME__', folder_name)
+    groovy_script = groovy_script.replace('__FOLDER_NAME__', FOLDER)
     result = execute_groovy_script(groovy_script)
-    print(result)
+    return result
+
+
+if __name__ == '__main__':
+    parse_arguments()
+    main()
+
