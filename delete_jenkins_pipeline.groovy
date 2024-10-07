@@ -6,7 +6,9 @@ pipeline {
     }
 
     environment {
-        SCRIPT_PATH = 'delete_folder_domain_credentials.groovy'
+        SCRIPT_PATH = 'delete_folder_domain_credentials.py'
+        JENKINS_URL = 'http://localhost:8080'
+        JENKINS_CREDS = credentials('jenkins_id')
     }
 
     stages {
@@ -20,12 +22,25 @@ pipeline {
             }
         }
 
+        stage('Setup Python Environment') {
+            steps {
+                sh '''
+                python3 -m venv venv
+                . venv/bin/activate
+                pip install requests
+                '''
+            }
+        }
+
         stage('Execute Groovy Script') {
             steps {
                 script {
-                    def scriptContent = readFile(env.SCRIPT_PATH)
-                    def result = Jenkins.instance.scriptler.runScript(scriptContent, [params.FOLDER_NAME])
-                    echo "Script execution result: ${result}"
+                    withCredentials([usernamePassword(credentialsId: 'jenkins_id', usernameVariable: 'JENKINS_USER', passwordVariable: 'JENKINS_API_TOKEN')]) {
+                        sh '''
+                        . venv/bin/activate
+                        python3 ${SCRIPT_PATH} "${JENKINS_URL}" "${JENKINS_USER}" "${JENKINS_API_TOKEN}"
+                        '''
+                    }
                 }
             }
         }
