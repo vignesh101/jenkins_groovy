@@ -40,6 +40,8 @@ import com.cloudbees.hudson.plugins.folder.properties.FolderCredentialsProvider
 import org.jenkinsci.plugins.plaincredentials.impl.StringCredentialsImpl
 import hudson.util.Secret
 import java.util.UUID
+import org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper
+import org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding
 
 // Function to generate random usernames and passwords for Sybase
 def generateRandomCredentials() {{
@@ -82,8 +84,8 @@ def createSybaseJobInFolder(folder, jobName, credentialsId) {{
     // Configure the job to use Jenkins' built-in credentials binding
     def bindingScript = """
         echo "Using Sybase Credentials"
-        USERNAME=\\$(echo \\$SYBASE_CREDENTIALS_USR)
-        PASSWORD=\\$(echo \\$SYBASE_CREDENTIALS_PSW)
+        USERNAME=\\$(echo \\$SYBASE_USERNAME)
+        PASSWORD=\\$(echo \\$SYBASE_PASSWORD)
         echo "Sybase Username: \\$USERNAME"
         echo "Sybase Password: \\$PASSWORD"
     """
@@ -91,9 +93,14 @@ def createSybaseJobInFolder(folder, jobName, credentialsId) {{
     job.buildersList.add(new hudson.tasks.Shell(bindingScript))
 
     // Set up credentials binding in the job
-    def credentialsBinding = new org.jenkinsci.plugins.credentialsbinding.impl.UsernamePasswordMultiBinding("SYBASE_CREDENTIALS", credentialsId)
+    def credentialsBinding = new UsernamePasswordMultiBinding(
+        "SYBASE_CREDENTIALS",
+        "SYBASE_USERNAME",
+        "SYBASE_PASSWORD",
+        credentialsId
+    )
     def buildWrappersList = job.getBuildWrappersList()
-    buildWrappersList.add(new org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper([credentialsBinding]))
+    buildWrappersList.add(new SecretBuildWrapper([credentialsBinding]))
 
     // Save the job
     job.save()
