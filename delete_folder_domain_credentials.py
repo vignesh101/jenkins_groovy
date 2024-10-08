@@ -101,5 +101,6 @@ def main():
 
 if __name__ == '__main__':
     parse_arguments()
-    main()
+    result_val = main()
+    print(result_val)
 
