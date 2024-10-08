@@ -94,7 +94,7 @@ def main():
         // Save changes
         Jenkins.instance.save()
     '''
-    groovy_script = groovy_script.replace('__FOLDER_NAME__', FOLDER)
+    groovy_script = groovy_script.replace('__FOLDER_NAME__', f"'{FOLDER}'")
     result = execute_groovy_script(groovy_script)
     return result
 
@@ -103,4 +103,3 @@ if __name__ == '__main__':
     parse_arguments()
     result_val = main()
     print(result_val)
-
