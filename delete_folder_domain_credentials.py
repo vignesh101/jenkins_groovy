@@ -11,7 +11,7 @@ FOLDER = ""
 
 def parse_arguments():
     global JENKINS_URL, JENKINS_USER, JENKINS_API_TOKEN, FOLDER
-    parser = argparse.ArgumentParser(description='Process Jenkins credentials.')
+    parser = argparse.ArgumentParser(description='Process Jenkins credentials and delete jobs.')
     parser.add_argument('jenkins_url', help='Jenkins URL')
     parser.add_argument('username', help='Jenkins username')
     parser.add_argument('password', help='Jenkins password or API token')
@@ -49,8 +49,10 @@ def main():
         import com.cloudbees.hudson.plugins.folder.Folder
         import com.cloudbees.plugins.credentials.CredentialsProvider
         import com.cloudbees.plugins.credentials.domains.Domain
+        import hudson.model.Job
         
         def folderName = __FOLDER_NAME__
+        
         def deleteSybaseCredentialsInFolder(folder) {
             def credentials = CredentialsProvider.lookupCredentials(
                 com.cloudbees.plugins.credentials.common.StandardCredentials,
@@ -71,12 +73,26 @@ def main():
             }
         }
         
+        def deleteJobsInFolder(folder) {
+            folder.items.each { item ->
+                if (item instanceof Job) {
+                    println "Deleting job: ${item.fullName}"
+                    item.delete()
+                } else if (item instanceof Folder) {
+                    deleteJobsInFolder(item)
+                }
+            }
+        }
+        
         // Function to recursively process folders
         def processFolder(item) {
             if (item instanceof Folder) {
                 deleteSybaseCredentialsInFolder(item)
+                deleteJobsInFolder(item)
                 item.items.each { childItem ->
-                    processFolder(childItem)
+                    if (childItem instanceof Folder) {
+                        processFolder(childItem)
+                    }
                 }
             }
         }
