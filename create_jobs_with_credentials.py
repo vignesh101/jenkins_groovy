@@ -80,10 +80,10 @@ def createSybaseJobInFolder(folder, jobName, credentialsId) {{
     // Configure the job to use Jenkins' built-in credentials binding
     def bindingScript = """
         echo "Using Sybase Credentials"
-        USERNAME=$(echo $SYBASE_CREDENTIALS_USR)
-        PASSWORD=$(echo $SYBASE_CREDENTIALS_PSW)
-        echo "Sybase Username: $USERNAME"
-        echo "Sybase Password: $PASSWORD"
+        USERNAME=\\$(echo \\$SYBASE_CREDENTIALS_USR)
+        PASSWORD=\\$(echo \\$SYBASE_CREDENTIALS_PSW)
+        echo "Sybase Username: \\$USERNAME"
+        echo "Sybase Password: \\$PASSWORD"
     """
 
     job.getBuildersList().add(new hudson.tasks.Shell(bindingScript))
