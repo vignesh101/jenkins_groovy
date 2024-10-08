@@ -36,6 +36,8 @@ import com.cloudbees.hudson.plugins.folder.*
 import com.cloudbees.plugins.credentials.*
 import com.cloudbees.plugins.credentials.domains.*
 import com.cloudbees.plugins.credentials.impl.*
+import hudson.plugins.credentialsbinding.*
+import hudson.plugins.credentialsbinding.impl.*
 import java.util.UUID
 
 // Function to generate random usernames and passwords for Sybase
@@ -48,7 +50,14 @@ def generateRandomCredentials() {{
 // Function to create Sybase credentials in a folder
 def createSybaseCredentialsInFolder(folder, username, password, id) {{
     def domain = Domain.global()
-    def store = folder.properties.get(FolderCredentialsProperty).domainCredentialsMap.get(domain)
+    def store = folder.getProperties().get(FolderCredentialsProperty.class)?.getStore()
+    
+    if (store == null) {{
+        // If the folder does not have a credentials store, create one
+        store = new CredentialsStoreImpl(folder)
+        folder.addProperty(new FolderCredentialsProperty(store))
+    }}
+    
     def credentials = new UsernamePasswordCredentialsImpl(
         CredentialsScope.GLOBAL,
         id,
@@ -57,38 +66,38 @@ def createSybaseCredentialsInFolder(folder, username, password, id) {{
         password
     )
     store.addCredentials(domain, credentials)
-    println("Created Sybase Credentials: ${{id}} for Username: ${{username}} in folder: ${{folder.name}}")
+    println("Created Sybase Credentials: ${{id}} for Username: ${{username}} in folder: ${{folder.getName()}}")
 }}
 
 // Function to create a Jenkins job in a folder
 def createSybaseJobInFolder(folder, jobName, credentialsId) {{
     def job = folder.createProject(FreeStyleProject, jobName)
-    def builders = job.buildersList
+    def builders = job.getBuildersList()
 
     // Add a shell step that uses the credentials
-    def shell = new hudson.tasks.Shell("""
+    def shell = new hudson.tasks.Shell(\"\"\"
         echo "Using Sybase Credentials"
-        echo "Credential ID: $credentialsId"
-    """)
+        echo "Credential ID: {credentialsId}"
+    \"\"\")
     builders.add(shell)
 
     // Add credentials binding
-    def bindings = new ArrayList<hudson.tasks.EcrBinding>()
-    bindings.add(new hudson.tasks.UsernamePasswordBinding("SYBASE_CREDENTIALS", credentialsId))
-    def wrapper = new org.jenkinsci.plugins.credentialsbinding.impl.SecretBuildWrapper(bindings)
-    job.buildWrappersList.add(wrapper)
+    def bindings = new ArrayList<UsernamePasswordBinding>()
+    bindings.add(new UsernamePasswordBinding("SYBASE_CREDENTIALS", "{credentialsId}"))
+    def wrapper = new SecretBuildWrapper(bindings)
+    job.getBuildWrappersList().add(wrapper)
 
     job.save()
-    println "Created and configured Jenkins job: ${{jobName}} in folder: ${{folder.name}} with credentials: ${{credentialsId}}"
+    println "Created and configured Jenkins job: ${{jobName}} in folder: ${{folder.getName()}} with credentials: ${{credentialsId}}"
 }}
 
 // Main function to create Sybase Jenkins jobs and credentials in a folder
 def createJobsAndCredentialsInFolder(folderName, numJobs) {{
-    def jenkins = Jenkins.getInstance()
-    def folder = jenkins.getItem(folderName)
+    def jenkins = Jenkins.getInstanceOrNull()
+    def folder = jenkins.getItemByFullName(folderName)
 
     if (folder == null || !(folder instanceof Folder)) {{
-        println "Folder '${{folderName}}' not found!"
+        println "Folder '${{folderName}}' not found or is not a Folder!"
         return
     }}
 
